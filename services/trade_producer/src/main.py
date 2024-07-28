@@ -25,7 +25,7 @@ def produce_trades(kafka_broker_address: str, kafka_topic_name: str) -> None:
     topic = app.topic(name=kafka_topic_name, value_serializer='json')
 
     # Create an instance of the Kraken API
-    kraken_api = KrakenWebsocketTradeApi(product_id=config.product_id)
+    kraken_api = KrakenWebsocketTradeApi(product_ids=config.product_ids)
 
     logger.info('Creating the producer...')
 
