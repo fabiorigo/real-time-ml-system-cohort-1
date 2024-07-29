@@ -1,10 +1,12 @@
-FROM python:3.11.2-slim-buster
+FROM python:3.11.2-slim-buster as runtime
 
 # add /app/src to the PYTHONPATH
 ENV PYTHONPATH=/app
 
 # stream output to console
 ENV PYTHONUNBUFFERED=1
+
+ENV POETRY_CACHE_DIR=/tmp/poetry_cache
 
 # install poetry inside the container
 RUN pip install poetry==1.8.3
@@ -15,9 +17,9 @@ WORKDIR /app
 COPY pyproject.toml poetry.lock /app
 
 # install Python dependencies from the pyproject.toml file
-RUN poetry install
+RUN poetry install --without dev --no-root && rm -rf $POETRY_CACHE_DIR
 
 # copy all the source code into the container
-COPY . /app
+COPY ./src /app/src
 
 CMD ["poetry", "run", "python", "src/main.py"]
