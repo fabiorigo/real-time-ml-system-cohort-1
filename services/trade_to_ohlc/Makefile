@@ -1,5 +1,5 @@
 build:
-	docker build -t trade-to_ohlc .
+	docker build -t trade-to-ohlc .
 
 run-dev: 
 	KAFKA_BROKER_ADDRESS='localhost:19092' \
@@ -13,7 +13,7 @@ run-debug: build
 		--network=redpanda_network \
 		-e KAFKA_BROKER_ADDRESS=redpanda-0:9092 \
 		-e OHLC_WINDOW_SECONDS=60 \
-		trade-to_ohlc
+		trade-to-ohlc
 
 run: build
 	docker run \
@@ -22,7 +22,7 @@ run: build
 		--network=redpanda_network \
 		-e KAFKA_BROKER_ADDRESS=redpanda-0:9092 \
 		-e OHLC_WINDOW_SECONDS=60 \
-		trade-to_ohlc
+		trade-to-ohlc
 
 lint:
 	ruff check --fix

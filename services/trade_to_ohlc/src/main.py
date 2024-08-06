@@ -82,17 +82,23 @@ def update_candle_dict(candle_dict: dict, value: dict) -> dict:
                 'product_id': value['product_id'],
             }
         else:
-            candle_dict[value['product_id']]['high'] = max(candle_dict[value['product_id']]['high'], value['price'])     
-            candle_dict[value['product_id']]['low'] = min(candle_dict[value['product_id']]['low'], value['price'])
+            candle_dict[value['product_id']]['high'] = max(
+                candle_dict[value['product_id']]['high'], value['price']
+            )
+            candle_dict[value['product_id']]['low'] = min(
+                candle_dict[value['product_id']]['low'], value['price']
+            )
             candle_dict[value['product_id']]['close'] = value['price']
 
     return candle_dict
+
 
 def extract_candles_from_dict(value: dict):
     candle_list = value['value'].values()
     for candle in candle_list:
         candle['timestamp'] = value['end']
     return candle_list
+
 
 if __name__ == '__main__':
     trade_to_ohlc(
