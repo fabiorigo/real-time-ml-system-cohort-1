@@ -2,7 +2,6 @@ build:
 	docker build -t trade-producer .
 
 run-dev: 
-	KAFKA_BROKER_ADDRESS='localhost:19092' \
 	poetry run python -m src.main
 
 run-debug: build

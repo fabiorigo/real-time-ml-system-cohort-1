@@ -2,8 +2,6 @@ build:
 	docker build -t trade-to-ohlc .
 
 run-dev: 
-	KAFKA_BROKER_ADDRESS='localhost:19092' \
-	OHLC_WINDOW_SECONDS=10 \
 	poetry run python -m src.main
 
 run-debug: build
