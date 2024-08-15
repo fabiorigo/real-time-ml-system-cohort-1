@@ -1,4 +1,4 @@
-FROM python:3.11.2-slim-buster as runtime
+FROM python:3.11.2-slim-buster
 
 # add /app/src to the PYTHONPATH
 ENV PYTHONPATH="${PYTHONPATH}:/app/src"
@@ -20,4 +20,4 @@ RUN poetry install --without dev && rm -rf /tmp/poetry_cache
 # copy all the source code into the container
 COPY ./src /app/src
 
-CMD ["poetry", "run", "python", "src/main.py"]
+CMD ["poetry", "run", "python", "-m", "src.main"]

@@ -3,7 +3,7 @@ build:
 
 run-dev: 
 	KAFKA_BROKER_ADDRESS='localhost:19092' \
-	poetry run python src/main.py
+	poetry run python -m src.main
 
 run-debug: build
 	docker run \

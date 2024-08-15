@@ -4,8 +4,8 @@ from typing import Dict, List
 from loguru import logger
 from quixstreams import Application
 
-from src.config import config
-from src.kraken_api import KrakenWebsocketTradeApi
+from .config import config
+from .kraken_api import KrakenWebsocketTradeApi
 
 
 def produce_trades(kafka_broker_address: str, kafka_topic_name: str) -> None:

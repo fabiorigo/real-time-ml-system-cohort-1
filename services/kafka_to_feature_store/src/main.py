@@ -1,10 +1,11 @@
 import json
 
+from datetime import datetime
 from loguru import logger
 from quixstreams import Application
 
-from src.config import config
-from src.hopsworks_api import push_data_to_feature_store
+from .config import config
+from .hopsworks_api import HopsworksApi
 
 
 def kafka_to_feature_store(
@@ -12,6 +13,7 @@ def kafka_to_feature_store(
     kafka_broker_address: str,
     feature_group_name: str,
     feature_group_version: int,
+    feature_group_send_seconds: int
 ) -> None:
     """
     Reads 'ohlc' data from the Kafka topic and writes it to the feature store
@@ -25,6 +27,9 @@ def kafka_to_feature_store(
 
     with app.get_consumer() as consumer:
         consumer.subscribe(topics=[kafka_topic])
+        batch = []
+        milestone = datetime.now().timestamp()
+        api = HopsworksApi(feature_group_name=feature_group_name, feature_group_version=feature_group_version)
 
         while True:
             msg = consumer.poll(1)
@@ -38,14 +43,15 @@ def kafka_to_feature_store(
 
                 # step 1 -> parse the message from kafka into a dictionary
                 ohlc = json.loads(msg.value().decode('utf-8'))
+                batch.append(ohlc)
+                logger.info('Consumed OHLC data')
 
                 # step 2 -> send data to the feature store
-                push_data_to_feature_store(
-                    feature_group_name=feature_group_name,
-                    feature_group_version=feature_group_version,
-                    data=ohlc,
-                )
-
+                if datetime.now().timestamp() - milestone > feature_group_send_seconds:
+                    milestone = datetime.now().timestamp()
+                    logger.info('Publishing an OHLC batch')
+                    api.push_data_to_feature_store(data=batch)
+                    batch = []
 
 if __name__ == '__main__':
     kafka_to_feature_store(
@@ -53,4 +59,5 @@ if __name__ == '__main__':
         kafka_broker_address=config.kafka_broker_address,
         feature_group_name=config.feature_group_name,
         feature_group_version=config.feature_group_version,
+        feature_group_send_seconds=config.feature_group_send_seconds
     )

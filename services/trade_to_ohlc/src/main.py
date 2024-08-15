@@ -3,7 +3,7 @@ from datetime import timedelta
 from loguru import logger
 from quixstreams import Application
 
-from src.config import config
+from .config import config
 
 
 def trade_to_ohlc(
