@@ -4,9 +4,10 @@ import pandas as pd
 from src.config import config
 
 class HopsworksApi:
-    def __init__(self, feature_group_name: str, feature_group_version: int):
+    def __init__(self, feature_group_name: str, feature_group_version: int, live_or_historical: str):
         self.feature_group_name = feature_group_name
         self.feature_group_version = feature_group_version
+        self.live_or_historical = live_or_historical
 
         # Authenticate with the Hopsworks API
         project = hopsworks.login(
@@ -36,4 +37,10 @@ class HopsworksApi:
         data = pd.DataFrame(data)
 
         # write to the feature group
-        self.ohlc_feature_group.insert(data)
+        self.ohlc_feature_group.insert(
+            data,
+            write_options={
+                'start_offline_materialization': True
+                if self.live_or_historical == 'historical'
+                else False
+            })

@@ -11,6 +11,7 @@ class Config(BaseSettings):
     feature_group_name: str
     feature_group_version: int
     feature_group_send_seconds: int
+    live_or_historical: str
     hopsworks_project_name: str
     hopsworks_api_key: str
 

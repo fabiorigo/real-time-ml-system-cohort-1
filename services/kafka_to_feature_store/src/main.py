@@ -13,7 +13,8 @@ def kafka_to_feature_store(
     kafka_broker_address: str,
     feature_group_name: str,
     feature_group_version: int,
-    feature_group_send_seconds: int
+    feature_group_send_seconds: int,
+    live_or_historical: str
 ) -> None:
     """
     Reads 'ohlc' data from the Kafka topic and writes it to the feature store
@@ -32,7 +33,8 @@ def kafka_to_feature_store(
         milestone = datetime.now().timestamp()
         api = HopsworksApi(
             feature_group_name=feature_group_name, 
-            feature_group_version=feature_group_version
+            feature_group_version=feature_group_version,
+            live_or_historical=live_or_historical
         )
 
         while True:
@@ -64,7 +66,8 @@ if __name__ == '__main__':
             kafka_broker_address=config.kafka_broker_address,
             feature_group_name=config.feature_group_name,
             feature_group_version=config.feature_group_version,
-            feature_group_send_seconds=config.feature_group_send_seconds
+            feature_group_send_seconds=config.feature_group_send_seconds,
+            live_or_historical=config.live_or_historical
         )
     except KeyboardInterrupt:
         logger.info('Exiting...')
