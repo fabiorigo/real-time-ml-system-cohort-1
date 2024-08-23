@@ -9,3 +9,9 @@ start-feature-pipeline:
 
 stop-feature-pipeline:
 	docker compose -f feature-pipeline.yaml down
+
+start-historical-feature-pipeline:
+	docker compose -f feature-pipeline-historical.yaml up --build -d
+
+stop-historical-feature-pipeline:
+	docker compose -f feature-pipeline-historical.yaml down
