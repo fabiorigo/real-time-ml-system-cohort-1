@@ -10,6 +10,7 @@ run-debug: build
 		--rm \
 		--network=redpanda_network \
 		-e KAFKA_BROKER_ADDRESS=redpanda-0:9092 \
+		-e LIVE_OR_HISTORICAL=live \
 		trade-producer
 
 run: build
@@ -18,6 +19,7 @@ run: build
 		--rm \
 		--network=redpanda_network \
 		-e KAFKA_BROKER_ADDRESS=redpanda-0:9092 \
+		-e LIVE_OR_HISTORICAL=live \
 		trade-producer
 
 lint:
