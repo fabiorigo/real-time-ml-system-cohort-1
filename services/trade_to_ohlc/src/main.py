@@ -101,9 +101,12 @@ def extract_candles_from_dict(value: dict):
 
 
 if __name__ == '__main__':
-    trade_to_ohlc(
-        kafka_input_topic=config.kafka_input_topic,
-        kafka_output_topic=config.kafka_output_topic,
-        kafka_broker_address=config.kafka_broker_address,
-        ohlc_window_seconds=config.ohlc_window_seconds,
-    )
+    try:
+        trade_to_ohlc(
+            kafka_input_topic=config.kafka_input_topic,
+            kafka_output_topic=config.kafka_output_topic,
+            kafka_broker_address=config.kafka_broker_address,
+            ohlc_window_seconds=config.ohlc_window_seconds,
+        )
+    except KeyboardInterrupt:
+        logger.info('Exiting...')

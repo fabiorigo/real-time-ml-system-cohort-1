@@ -68,10 +68,13 @@ def produce_trades(
 
 
 if __name__ == '__main__':
-    produce_trades(
-        kafka_broker_address=config.kafka_broker_address,
-        kafka_topic_name=config.kafka_topic_name,
-        product_ids=config.product_ids,
-        live_or_historical=config.live_or_historical,
-        last_n_days=config.last_n_days
-    )
+    try:
+        produce_trades(
+            kafka_broker_address=config.kafka_broker_address,
+            kafka_topic_name=config.kafka_topic_name,
+            product_ids=config.product_ids,
+            live_or_historical=config.live_or_historical,
+            last_n_days=config.last_n_days
+        )
+    except KeyboardInterrupt:
+        logger.info('Exiting...')

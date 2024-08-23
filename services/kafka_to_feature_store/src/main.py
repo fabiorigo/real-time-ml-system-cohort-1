@@ -22,14 +22,18 @@ def kafka_to_feature_store(
     """
 
     app = Application(
-        broker_address=kafka_broker_address, consumer_group='kafka_to_feature_store'
+        broker_address=kafka_broker_address, 
+        consumer_group='kafka_to_feature_store'
     )
 
     with app.get_consumer() as consumer:
         consumer.subscribe(topics=[kafka_topic])
         batch = []
         milestone = datetime.now().timestamp()
-        api = HopsworksApi(feature_group_name=feature_group_name, feature_group_version=feature_group_version)
+        api = HopsworksApi(
+            feature_group_name=feature_group_name, 
+            feature_group_version=feature_group_version
+        )
 
         while True:
             msg = consumer.poll(1)
@@ -54,10 +58,13 @@ def kafka_to_feature_store(
                     batch = []
 
 if __name__ == '__main__':
-    kafka_to_feature_store(
-        kafka_topic=config.kafka_topic,
-        kafka_broker_address=config.kafka_broker_address,
-        feature_group_name=config.feature_group_name,
-        feature_group_version=config.feature_group_version,
-        feature_group_send_seconds=config.feature_group_send_seconds
-    )
+    try: 
+        kafka_to_feature_store(
+            kafka_topic=config.kafka_topic,
+            kafka_broker_address=config.kafka_broker_address,
+            feature_group_name=config.feature_group_name,
+            feature_group_version=config.feature_group_version,
+            feature_group_send_seconds=config.feature_group_send_seconds
+        )
+    except KeyboardInterrupt:
+        logger.info('Exiting...')
