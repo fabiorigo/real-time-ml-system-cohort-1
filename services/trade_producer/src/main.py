@@ -1,3 +1,5 @@
+import time
+
 from time import sleep
 from typing import Dict, List
 
@@ -5,10 +7,17 @@ from loguru import logger
 from quixstreams import Application
 
 from .config import config
-from .kraken_api import KrakenWebsocketTradeApi
+from .kraken_api.websocket import KrakenWebsocketTradeApi
+from .kraken_api.rest import KrakenRestAPI
 
 
-def produce_trades(kafka_broker_address: str, kafka_topic_name: str) -> None:
+def produce_trades(
+    kafka_broker_address: str, 
+    kafka_topic_name: str,
+    product_ids: List[str],
+    live_or_historical: str,
+    last_n_days: int
+    ) -> None:
     """
     Reads trades from the Kraken websocket API and saves them into a Kafka topic.
 
@@ -19,19 +28,30 @@ def produce_trades(kafka_broker_address: str, kafka_topic_name: str) -> None:
     Returns:
         None
     """
+    assert live_or_historical in { "live", "historical" }, f"Invalid value for live_or_historical: {live_or_historical}"
+
     app = Application(broker_address=kafka_broker_address)
 
     # the topic where we will save the trades
     topic = app.topic(name=kafka_topic_name, value_serializer='json')
 
     # Create an instance of the Kraken API
-    kraken_api = KrakenWebsocketTradeApi(product_ids=config.product_ids)
+    if live_or_historical == 'live':
+        kraken_api = KrakenWebsocketTradeApi(product_ids=product_ids)
+    else:
+        to_ms = int(time.time() * 1000)
+        from_ms = to_ms - last_n_days * 24 * 60 * 60 * 1000
+        kraken_api = KrakenRestAPI(product_ids=product_ids, from_ms=from_ms, to_ms=to_ms)
 
     logger.info('Creating the producer...')
 
     # Create a Producer instance
     with app.get_producer() as producer:
         while True:
+            if kraken_api.is_done():
+                logger.info('Done fetching historical data')
+                break
+
             # Get the trades from the Kraken API
             trades: List[Dict] = kraken_api.get_trades()
 
@@ -42,7 +62,7 @@ def produce_trades(kafka_broker_address: str, kafka_topic_name: str) -> None:
                 # Produce a message into the Kafka topic
                 producer.produce(topic=topic.name, value=message.value, key=message.key)
 
-                logger.info('Message sent!')
+                logger.info(message.value)
 
             sleep(1)
 
@@ -51,4 +71,7 @@ if __name__ == '__main__':
     produce_trades(
         kafka_broker_address=config.kafka_broker_address,
         kafka_topic_name=config.kafka_topic_name,
+        product_ids=config.product_ids,
+        live_or_historical=config.live_or_historical,
+        last_n_days=config.last_n_days
     )

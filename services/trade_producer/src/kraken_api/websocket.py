@@ -62,6 +62,10 @@ class KrakenWebsocketTradeApi:
             )
 
         return trades
+    
+    def is_done(self) -> bool:
+        """The websocket never stops fetching trades"""
+        return False
 
 
 ## EXAMPLES OF KRAKEN API MESSAGES

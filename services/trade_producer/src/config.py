@@ -9,5 +9,7 @@ class Config(BaseSettings):
     kafka_broker_address: str
     kafka_topic_name: str
     product_ids: List[str]
+    live_or_historical: str
+    last_n_days: int
 
 config = Config()
