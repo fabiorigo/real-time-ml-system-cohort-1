@@ -4,7 +4,10 @@ build:
 run-dev: 
 	poetry run python -m src.main
 
-run-debug: build
+run-dev-historical: 
+	LIVE_OR_HISTORICAL=historical poetry run python -m src.main
+
+run: build
 	docker run \
 		-it \
 		--rm \
@@ -13,13 +16,13 @@ run-debug: build
 		-e LIVE_OR_HISTORICAL=live \
 		trade-producer
 
-run: build
+run-historical: build
 	docker run \
-		-d \
+		-it \
 		--rm \
 		--network=redpanda_network \
 		-e KAFKA_BROKER_ADDRESS=redpanda-0:9092 \
-		-e LIVE_OR_HISTORICAL=live \
+		-e LIVE_OR_HISTORICAL=historical \
 		trade-producer
 
 lint:

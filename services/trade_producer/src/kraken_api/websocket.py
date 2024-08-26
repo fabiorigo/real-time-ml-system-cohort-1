@@ -1,5 +1,7 @@
 import json
+from datetime import datetime
 from typing import Dict, List
+from .trade import Trade
 
 from loguru import logger
 from websocket import create_connection
@@ -40,7 +42,7 @@ class KrakenWebsocketTradeApi:
         # just confirmation on their end that the subscription was successful
         _ = self._ws.recv()
 
-    def get_trades(self) -> List[Dict]:
+    def get_trades(self) -> List[Trade]:
         message = self._ws.recv()
 
         if 'heartbeat' in message or 'subscribe' in message:
@@ -52,14 +54,13 @@ class KrakenWebsocketTradeApi:
 
         trades = []
         for trade in message['data']:
-            trades.append(
-                {
-                    'product_id': trade['symbol'],
-                    'price': trade['price'],
-                    'volume': trade['qty'],
-                    'timestamp': trade['timestamp'],
-                }
+            t = Trade(
+                product_id=trade['symbol'], 
+                price=trade['price'], 
+                volume=trade['qty'], 
+                timestamp_sec=int(datetime.fromisoformat(trade['timestamp']).timestamp())
             )
+            trades.append(t)
 
         return trades
     

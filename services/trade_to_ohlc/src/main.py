@@ -1,7 +1,11 @@
 from datetime import timedelta
+from typing import Any, List, Optional, Tuple, Dict
+from .trade import Trade
+from .ohlc import Ohlc
 
 from loguru import logger
 from quixstreams import Application
+from quixstreams.models.timestamps import TimestampType
 
 from .config import config
 
@@ -29,11 +33,12 @@ def trade_to_ohlc(
 
     # this handles all low level comunication with kafka
     app = Application(
-        broker_address=kafka_broker_address, consumer_group='trade_to_ohlc'
+        broker_address=kafka_broker_address, 
+        consumer_group='trade_to_ohlc'
     )
 
     # specify input and output topics for this application
-    input_topic = app.topic(name=kafka_input_topic, value_serializer='json')
+    input_topic = app.topic(name=kafka_input_topic, value_serializer='json', timestamp_extractor=custom_ts_extractor)
     output_topic = app.topic(name=kafka_output_topic, value_serializer='json')
 
     # creating a streaming data frame
@@ -56,48 +61,54 @@ def trade_to_ohlc(
     app.run(sdf)
 
 
+def custom_ts_extractor(
+    value: Any,
+    headers: Optional[List[Tuple[str, bytes]]],
+    timestamp: float,
+    timestamp_type: TimestampType,
+) -> int:
+    """
+    Specifying a custom timestamp extractor to use the timestamp from the message payload 
+    instead of Kafka timestamp.
+    """
+    return value['timestamp_sec'] * 1000
+
+
+def new_ohlc(value: dict):
+    return {
+        'product_id': value['product_id'],
+        'open': value['price'],
+        'high': value['price'],
+        'low': value['price'],
+        'close': value['price']
+    }
+
+
 def init_candle_dict(value: dict) -> dict:
-    candle_dict: dict = dict()
+    ohlcs: dict = dict()
 
     if value['product_id'] in config.product_ids:
-        candle_dict[value['product_id']] = {
-            'open': value['price'],
-            'high': value['price'],
-            'low': value['price'],
-            'close': value['price'],
-            'product_id': value['product_id'],
-        }
+        ohlcs[value['product_id']] = new_ohlc(value)
 
-    return candle_dict
+    return ohlcs
 
 
-def update_candle_dict(candle_dict: dict, value: dict) -> dict:
+def update_candle_dict(ohlcs: dict, value: dict) -> dict:
     if value['product_id'] in config.product_ids:
-        if value['product_id'] not in candle_dict.keys():
-            candle_dict[value['product_id']] = {
-                'open': value['price'],
-                'high': value['price'],
-                'low': value['price'],
-                'close': value['price'],
-                'product_id': value['product_id'],
-            }
+        if value['product_id'] not in ohlcs.keys():
+            ohlcs[value['product_id']] = new_ohlc(value)
         else:
-            candle_dict[value['product_id']]['high'] = max(
-                candle_dict[value['product_id']]['high'], value['price']
-            )
-            candle_dict[value['product_id']]['low'] = min(
-                candle_dict[value['product_id']]['low'], value['price']
-            )
-            candle_dict[value['product_id']]['close'] = value['price']
-
-    return candle_dict
+            ohlcs[value['product_id']]['high'] = max(ohlcs[value['product_id']]['high'], value['price'])
+            ohlcs[value['product_id']]['low'] = min(ohlcs[value['product_id']]['low'], value['price'])
+            ohlcs[value['product_id']]['close'] = value['price']
+    return ohlcs
 
 
-def extract_candles_from_dict(value: dict):
-    candle_list = value['value'].values()
-    for candle in candle_list:
-        candle['timestamp'] = value['end']
-    return candle_list
+def extract_candles_from_dict(value: dict) -> dict:
+    ohlcs = value['value'].values()
+    for ohlc in ohlcs:
+        ohlc['timestamp_ms'] = value['end']
+    return ohlcs
 
 
 if __name__ == '__main__':

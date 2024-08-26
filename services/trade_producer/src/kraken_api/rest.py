@@ -1,5 +1,7 @@
 from typing import List, Dict
 from loguru import logger
+from datetime import datetime
+from .trade import Trade
 import requests
 import json
 import time
@@ -19,10 +21,10 @@ class KrakenRestAPI:
         self.to_ms=to_ms
         self.next_req = {}
 
-        for id in product_ids:
-            self.next_req[id] = from_ms
+        for pid in product_ids:
+            self.next_req[pid] = from_ms
 
-    def get_trades(self) -> List[Dict]:
+    def get_trades(self) -> List[Trade]:
         """
         Fetches a batch of trades from the Kraken REST API and returns them as a list
         of dictionaries.
@@ -34,43 +36,47 @@ class KrakenRestAPI:
             List[Dict]: A list of dictionaries, where each dictionary contains the trade data.
         """
 
-        trades = []
-        urls = [ self.URL.format(product_id=pid, since_sec=self.from_ms / 1000) for pid in self.product_ids ]
+        trades: List[Trade] = []
 
         for pid in self.product_ids:
-            while pid in self.next_req:
-                url = self.URL.format(product_id=pid, since_sec=self.next_req[pid] / 1000)
+            url = self.URL.format(product_id=pid, since_sec=self.next_req[pid] / 1000)
 
-                # forcing an interval between calls, dut to Kraken rate limits
-                time.sleep(1)
-                response = requests.request("GET", url, headers={ 'Accept': 'application/json' }, data={})
+            # forcing an interval between calls, due to Kraken rate limits
+            time.sleep(1)
+            response = requests.request("GET", url, headers={ 'Accept': 'application/json' }, data={})
 
-                data = json.loads(response.text)
+            data = json.loads(response.text)
 
-                if (data['error']) is not None and len(data['error']) > 0:
-                    raise Exception(data['error']);
+            if (data['error']) is not None and len(data['error']) > 0:
+                raise Exception(data['error']);
 
-                if len(data['error']) == 0:
-                    product_id = list(data['result'])[0]
-                    for trade in data['result'][product_id]:
-                        resolved_trade = {
-                            'product_id': product_id,
-                            'price': float(trade[0]),
-                            'volume': float(trade[1]),
-                            'timestamp': int(trade[2] * 1000),
-                        }
-                        logger.info(resolved_trade)
-                        trades.append(resolved_trade)
-                    
-                    # Check if we are done fetching historical data
-                    last_ts_ms = int(data['result']['last']) / 1_000_000
-                    if last_ts_ms >= self.to_ms:
-                        self.next_req.pop(pid)
-                    else:
-                        self.next_req[pid] = last_ts_ms
+            if len(data['error']) == 0:
+                product_id = list(data['result'])[0]
+                for trade in data['result'][product_id]:
+                    t = Trade(
+                        product_id=product_id,
+                        price=float(trade[0]),
+                        volume=float(trade[1]),
+                        timestamp_sec=int(trade[2])
+                    )
+                    trades.append(t)
+                
+                # Check if we are done fetching historical data
+                last_ts_ms = int(data['result']['last']) / 1_000_000
+                if last_ts_ms >= self.to_ms:
+                    self.next_req.pop(pid)
+                else:
+                    self.next_req[pid] = last_ts_ms
 
-                    logger.debug(f'Fetched {len(trades)} trades')
-                    logger.debug(f'Last trade timestamp: {last_ts_ms}')
+                logger.info(f'Fetched {len(trades)} trades')
+
+        def _by_timestamp(t: Trade):
+            return t.timestamp_sec
+
+        trades.sort(key=_by_timestamp)
+        first_ts=datetime.fromtimestamp(trades[0].timestamp_sec).isoformat()
+        last_ts=datetime.fromtimestamp(trades[len(trades)-1].timestamp_sec).isoformat()
+        logger.debug(f"first_timestamp:'{first_ts}' last_timestamp:'{last_ts}'")
 
         return trades
 

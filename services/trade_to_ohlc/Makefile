@@ -4,18 +4,9 @@ build:
 run-dev: 
 	poetry run python -m src.main
 
-run-debug: build
-	docker run \
-		-it \
-		--rm \
-		--network=redpanda_network \
-		-e KAFKA_BROKER_ADDRESS=redpanda-0:9092 \
-		-e OHLC_WINDOW_SECONDS=60 \
-		trade-to-ohlc
-
 run: build
 	docker run \
-		-d \
+		-it \
 		--rm \
 		--network=redpanda_network \
 		-e KAFKA_BROKER_ADDRESS=redpanda-0:9092 \

@@ -9,6 +9,7 @@ from quixstreams import Application
 from .config import config
 from .kraken_api.websocket import KrakenWebsocketTradeApi
 from .kraken_api.rest import KrakenRestAPI
+from .kraken_api.trade import Trade
 
 
 def produce_trades(
@@ -53,18 +54,19 @@ def produce_trades(
                 break
 
             # Get the trades from the Kraken API
-            trades: List[Dict] = kraken_api.get_trades()
+            trades: List[Trade] = kraken_api.get_trades()
 
             for trade in trades:
                 # Serialize an event using the defined Topic
-                message = topic.serialize(key=trade['product_id'], value=trade)
+                message = topic.serialize(key=trade.product_id, value=trade.model_dump())
 
                 # Produce a message into the Kafka topic
                 producer.produce(topic=topic.name, value=message.value, key=message.key)
 
-                logger.info(message.value)
+                # we produce a maximum of around 100 messages per second, so that the next microservice does not discard historical messages
+                sleep(0.01)
 
-            sleep(1)
+                logger.info(message.value)
 
 
 if __name__ == '__main__':
