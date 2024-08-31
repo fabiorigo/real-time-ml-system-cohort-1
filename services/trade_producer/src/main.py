@@ -1,5 +1,4 @@
-import time
-
+from datetime import datetime, time
 from time import sleep
 from typing import Dict, List
 
@@ -17,7 +16,8 @@ def produce_trades(
     kafka_topic_name: str,
     product_ids: List[str],
     live_or_historical: str,
-    last_n_days: int
+    last_n_days: int,
+    max_trades_per_sec: int
     ) -> None:
     """
     Reads trades from the Kraken websocket API and saves them into a Kafka topic.
@@ -40,8 +40,8 @@ def produce_trades(
     if live_or_historical == 'live':
         kraken_api = KrakenWebsocketTradeApi(product_ids=product_ids)
     else:
-        to_ms = int(time.time() * 1000)
-        from_ms = to_ms - last_n_days * 24 * 60 * 60 * 1000
+        to_ms = datetime.combine(datetime.now(), time.min).timestamp() * 1000
+        from_ms = to_ms - (last_n_days * 24 * 60 * 60 * 1000)
         kraken_api = KrakenRestAPI(product_ids=product_ids, from_ms=from_ms, to_ms=to_ms)
 
     logger.info('Creating the producer...')
@@ -63,8 +63,8 @@ def produce_trades(
                 # Produce a message into the Kafka topic
                 producer.produce(topic=topic.name, value=message.value, key=message.key)
 
-                # we produce a maximum of around 100 messages per second, so that the next microservice does not discard historical messages
-                sleep(0.01)
+                # we produce with a maximum cadence, so that the next microservice does not discard historical messages
+                sleep(1/max_trades_per_sec)
 
                 logger.info(message.value)
 
@@ -76,7 +76,8 @@ if __name__ == '__main__':
             kafka_topic_name=config.kafka_topic_name,
             product_ids=config.product_ids,
             live_or_historical=config.live_or_historical,
-            last_n_days=config.last_n_days
+            last_n_days=config.last_n_days,
+            max_trades_per_sec=config.max_trades_per_sec
         )
     except KeyboardInterrupt:
         logger.info('Exiting...')

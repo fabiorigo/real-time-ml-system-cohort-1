@@ -23,8 +23,8 @@ class HopsworksApi:
             name=feature_group_name,
             version=feature_group_version,
             description='OHLC data coming from Kraken API',
-            primary_key=['product_id', 'timestamp'],
-            event_time='timestamp',
+            primary_key=['product_id', 'timestamp_ms'],
+            event_time='timestamp_ms',
             online_enabled=True,
         )
 

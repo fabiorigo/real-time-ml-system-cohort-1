@@ -11,5 +11,6 @@ class Config(BaseSettings):
     product_ids: List[str]
     live_or_historical: str
     last_n_days: int
+    max_trades_per_sec: int
 
 config = Config()

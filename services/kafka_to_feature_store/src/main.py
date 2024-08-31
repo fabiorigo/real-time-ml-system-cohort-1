@@ -40,17 +40,18 @@ def kafka_to_feature_store(
         while True:
             msg = consumer.poll(1)
             if msg is None:
+                logger.debug(f'No message')
                 continue
             elif msg.error():
                 logger.error('Kafka error: ', msg.error())
                 continue
             else:
                 # there is data that we need to send to the feature store
+                logger.info('Consumed OHLC data')
 
                 # step 1 -> parse the message from kafka into a dictionary
                 ohlc = json.loads(msg.value().decode('utf-8'))
                 batch.append(ohlc)
-                logger.info('Consumed OHLC data')
 
                 # step 2 -> send data to the feature store
                 if datetime.now().timestamp() - milestone > feature_group_send_seconds:

@@ -9,7 +9,7 @@ run-dev-historical:
 
 run: build
 	docker run \
-		-it \
+		-d \
 		--rm \
 		--network=redpanda_network \
 		-e KAFKA_BROKER_ADDRESS=redpanda-0:9092 \
@@ -18,7 +18,7 @@ run: build
 
 run-historical: build
 	docker run \
-		-it \
+		-d \
 		--rm \
 		--network=redpanda_network \
 		-e KAFKA_BROKER_ADDRESS=redpanda-0:9092 \

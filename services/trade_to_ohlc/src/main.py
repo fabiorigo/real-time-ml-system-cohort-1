@@ -1,7 +1,5 @@
-from datetime import timedelta
-from typing import Any, List, Optional, Tuple, Dict
-from .trade import Trade
-from .ohlc import Ohlc
+from datetime import timedelta, datetime
+from typing import Any, List, Optional, Tuple
 
 from loguru import logger
 from quixstreams import Application
@@ -86,21 +84,19 @@ def new_ohlc(value: dict):
 
 def init_candle_dict(value: dict) -> dict:
     ohlcs: dict = dict()
-
-    if value['product_id'] in config.product_ids:
-        ohlcs[value['product_id']] = new_ohlc(value)
-
+    ohlcs[value['product_id']] = new_ohlc(value)
+    logger.debug(f"Trade from: {datetime.fromtimestamp(value['timestamp_sec'])}")
     return ohlcs
 
 
 def update_candle_dict(ohlcs: dict, value: dict) -> dict:
-    if value['product_id'] in config.product_ids:
-        if value['product_id'] not in ohlcs.keys():
-            ohlcs[value['product_id']] = new_ohlc(value)
-        else:
-            ohlcs[value['product_id']]['high'] = max(ohlcs[value['product_id']]['high'], value['price'])
-            ohlcs[value['product_id']]['low'] = min(ohlcs[value['product_id']]['low'], value['price'])
-            ohlcs[value['product_id']]['close'] = value['price']
+    if value['product_id'] not in ohlcs.keys():
+        ohlcs[value['product_id']] = new_ohlc(value)
+    else:
+        ohlcs[value['product_id']]['high'] = max(ohlcs[value['product_id']]['high'], value['price'])
+        ohlcs[value['product_id']]['low'] = min(ohlcs[value['product_id']]['low'], value['price'])
+        ohlcs[value['product_id']]['close'] = value['price']
+    logger.debug(f"Trade from: {datetime.fromtimestamp(value['timestamp_sec'])}")
     return ohlcs
 
 
@@ -108,6 +104,7 @@ def extract_candles_from_dict(value: dict) -> dict:
     ohlcs = value['value'].values()
     for ohlc in ohlcs:
         ohlc['timestamp_ms'] = value['end']
+    logger.debug('Closed candle')
     return ohlcs
 
 

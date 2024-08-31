@@ -11,6 +11,5 @@ class Config(BaseSettings):
     kafka_input_topic: str
     kafka_output_topic: str
     ohlc_window_seconds: int
-    product_ids: List[str]
 
 config = Config()
